@@ -1,0 +1,91 @@
+{
+  "project": "Zoho Books UI Reference & Prototype",
+  "scope": {
+    "edition": "Global",
+    "organization": "Same organization selected by the user; identity retained privately",
+    "separateFromProcurement": true
+  },
+  "readiness": {
+    "state": "awaiting-explicit-dashboard-ready-signal",
+    "source": "parent-task-handoff",
+    "lastReportedScreen": "Organization Setup",
+    "observedInThisTask": false,
+    "authenticatedExplorationStarted": false,
+    "setupSubmissionAllowed": false,
+    "resumeTrigger": "Explicit dashboard-ready message in this task or from the parent task"
+  },
+  "constraints": {
+    "rawTenantReferencePublicationAllowed": false,
+    "websitePublicationAllowed": false,
+    "prototypeData": "fictional browser-local only",
+    "backendAllowed": false,
+    "authenticationAllowed": false,
+    "liveZohoApiAllowed": false,
+    "accountingOperationsAllowed": false,
+    "tenantInspectionPreference": "non-mutating first",
+    "lowImpactSyntheticInteractionTestsAllowedAfterReady": true,
+    "consequentialActionsRequireExactAuthorization": true,
+    "buttonBehaviorInventoryRequired": true
+  },
+  "evidenceLabels": [
+    "public-doc-candidate",
+    "tenant-verified-read-only",
+    "blocked-by-safety-boundary",
+    "unverified",
+    "observed-unavailable",
+    "synthetic-demo",
+    "observed-interaction",
+    "observed-control-commit-not-executed"
+  ],
+  "canonicalFamilies": [
+    "list",
+    "create-edit-form",
+    "record-detail",
+    "import-map-preview-wizard",
+    "confirmation-status-transition",
+    "allocation-matching",
+    "approval",
+    "email-public-link-customer-portal",
+    "payment-refund",
+    "pdf-template",
+    "settings",
+    "report",
+    "automation-integration-setup"
+  ],
+  "candidateDomains": [
+    {
+      "id": "sales",
+      "status": "public-doc-candidate",
+      "tenantVerified": false
+    },
+    {
+      "id": "purchases",
+      "status": "public-doc-candidate",
+      "tenantVerified": false
+    },
+    {
+      "id": "banking",
+      "status": "public-doc-candidate",
+      "tenantVerified": false
+    },
+    {
+      "id": "accountant",
+      "status": "public-doc-candidate",
+      "tenantVerified": false
+    },
+    {
+      "id": "itemsprojects",
+      "status": "public-doc-candidate",
+      "tenantVerified": false
+    },
+    {
+      "id": "reportssettings",
+      "status": "public-doc-candidate",
+      "tenantVerified": false
+    }
+  ],
+  "captures": [],
+  "verifiedBooksScreens": [],
+  "prototypeScreens": [],
+  "testActions": []
+}
