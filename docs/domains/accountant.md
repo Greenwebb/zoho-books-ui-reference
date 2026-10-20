@@ -1,8 +1,8 @@
 # Accountant and tax
 
-> Authorization update: this source note was researched under the original read-only instruction. The later user message permits button-level testing and low-impact synthetic record creation where safe after the explicit dashboard-ready signal. Current action boundaries are in [interaction coverage](../interaction-coverage-plan.md); that guidance supersedes older blanket read-only wording below. No tenant exploration or creation has occurred.
+> Evidence status (2026-10-20): The selected Global organization reached the Books dashboard and authenticated reference exploration has begun. The candidate workflows below remain public-document research, not tenant proof; observed screens and action boundaries are in [verified patterns](../verified-screen-patterns.md) and [interaction coverage](../interaction-coverage-plan.md). No tenant accounting record was created or changed; a temporary report Favorite toggle was reversed and verified empty.
 
-**Planning note only.** The selected Global organization is still at Organization Setup. Do not access authenticated Zoho pages or inspect or change tenant records. Wait for an explicit dashboard-ready signal before any prototype or Books-matched UI work. Public documentation does not verify the Global tenant or its screens.
+**Public-doc candidate note only.** Later tenant observations include the Manual Journals list and blank form, Chart of Accounts, Budgets and Transaction Locking screens; those are cataloged separately. This public help does not prove the remaining accountant/tax workflows or their Global behavior.
 
 ## Candidate workflows and screens
 

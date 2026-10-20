@@ -1,8 +1,8 @@
 # Reports, settings and integrations
 
-> Authorization update: this source note was researched under the original read-only instruction. The later user message permits button-level testing and low-impact synthetic record creation where safe after the explicit dashboard-ready signal. Current action boundaries are in [interaction coverage](../interaction-coverage-plan.md); that guidance supersedes older blanket read-only wording below. No tenant exploration or creation has occurred.
+> Evidence status (2026-10-20): The selected Global organization reached the Books dashboard and authenticated reference exploration has begun. The candidate workflows below remain public-document research, not tenant proof; observed screens and action boundaries are in [verified patterns](../verified-screen-patterns.md) and [interaction coverage](../interaction-coverage-plan.md). No tenant accounting record was created or changed; a temporary report Favorite toggle was reversed and verified empty.
 
-**Planning note — not a tenant capture.** The selected Global organization is still at Organization Setup. This note is based only on public Zoho Books help; the public pages do not verify the Global tenant or its dashboard state.
+**Public-doc candidate note — not tenant proof.** The user confirmed the Global Books dashboard was ready. Tenant observations separately cover Reports Center, Profit and Loss, Settings index/General, Invoice Templates and Workflow Rules/Email Alerts list states; this note remains public help research and does not establish every listed workflow or configuration.
 
 ## Source-supported candidate steps
 
@@ -22,7 +22,7 @@ These are shared UI-family abstractions, not assertions about exact Global tenan
 
 - **Users/roles, templates, automation, and Zoho Analytics/CRM workflows:** candidate scope only. The sources fetched here do not establish their Global-specific paths or exact steps. The reports index supports report-level role-based access and sharing, but does not establish organization-wide user/role administration. CRM appears in the integrations index; Analytics is not substantiated by the fetched page. Verify only from suitable public documentation before treating these as source-backed workflows. [1] [3]
 - Plan, country, organization configuration, and integration credentials can affect what is available. The reports page displays a plan list, while the settings and integrations pages flag plan or country qualifications. Public help pages display a **US-EN** edition header and US support details, alongside an editions selector that includes **Global**; they are not evidence that a described feature, label, or path matches the selected Global organization. [1] [2] [3]
-- No authenticated Zoho pages, tenant records, MCP/API tenant inspection, browser state, or tenant modifications were used. After an explicit dashboard-ready signal, any eventual capture should remain read-only: do not save settings, toggle modules, connect gateways/apps, regenerate keys, schedule/deactivate reports, or change user/report sharing permissions. Capture no confidential transaction, customer, or credential data.
+- Authenticated tenant navigation was performed separately after the dashboard-ready signal. The observed settings/report screens were not saved or configured; report export, scheduling, sharing, gateways, integrations, keys, user permissions and other consequential steps remain unverified or blocked. Capture no confidential transaction, customer, or credential data.
 
 ## References
 

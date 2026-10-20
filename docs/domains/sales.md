@@ -1,8 +1,8 @@
 # Sales and receivables
 
-> Authorization update: this source note was researched under the original read-only instruction. The later user message permits button-level testing and low-impact synthetic record creation where safe after the explicit dashboard-ready signal. Current action boundaries are in [interaction coverage](../interaction-coverage-plan.md); that guidance supersedes older blanket read-only wording below. No tenant exploration or creation has occurred.
+> Evidence status (2026-10-20): The selected Global organization reached the Books dashboard and authenticated reference exploration has begun. The candidate workflows below remain public-document research, not tenant proof; observed screens and action boundaries are in [verified patterns](../verified-screen-patterns.md) and [interaction coverage](../interaction-coverage-plan.md). No tenant accounting record was created or changed; a temporary report Favorite toggle was reversed and verified empty.
 
-Planning note only. The selected Global organization is still at Organization Setup. No authenticated Zoho page or tenant record was accessed; public documentation is not evidence of the Global tenant’s UI or data. Defer prototype work and Books-matched capture until an explicit dashboard-ready signal.
+Public help pages remain candidate evidence only and do not establish this Global tenant’s UI or data. The later tenant observations are recorded separately; they do not verify every sales lifecycle or consequential action.
 
 ## Source-supported candidate workflows
 

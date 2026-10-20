@@ -1,8 +1,8 @@
 # Items, inventory, projects and time
 
-> Authorization update: this source note was researched under the original read-only instruction. The later user message permits button-level testing and low-impact synthetic record creation where safe after the explicit dashboard-ready signal. Current action boundaries are in [interaction coverage](../interaction-coverage-plan.md); that guidance supersedes older blanket read-only wording below. No tenant exploration or creation has occurred.
+> Evidence status (2026-10-20): The selected Global organization reached the Books dashboard and authenticated reference exploration has begun. The candidate workflows below remain public-document research, not tenant proof; observed screens and action boundaries are in [verified patterns](../verified-screen-patterns.md) and [interaction coverage](../interaction-coverage-plan.md). No tenant accounting record was created or changed; a temporary report Favorite toggle was reversed and verified empty.
 
-Planning note only. This is based on public Zoho Books help, not on the selected Global organization. No authenticated Zoho pages or tenant records were accessed. Do not treat these sources as screenshots or verification of the Global tenant. Prototype and Books-matched UI work remain gated on an explicit dashboard-ready signal.
+This section is public-document candidate research, not tenant verification. Authenticated observations later covered Items and its read-only detail tabs, Projects and Timesheets lists, and visible item-creation controls; they did not verify the complete inventory/project/time lifecycle described below.
 
 ## Source-supported candidate workflows
 
@@ -15,7 +15,7 @@ Planning note only. This is based on public Zoho Books help, not on the selected
 
 Likely reusable screen families supported at a high level by the help contents are **record list/management views**, **create/edit forms**, **record details**, and **import selection/mapping/preview**. Project list/card views and timesheet calendar views are specifically listed; the item help describes a new-item form and multi-step import flow. These are workflow-planning labels, not claims that pages share identical UI or that public documentation establishes exact Global screens. [1] [2] [3]
 
-Any later capture should be read-only: observe visible navigation, lists, details, forms without saving, and view/filter/calendar states without changing values. Do not import, create, edit, delete, start a timer, or issue invoices. The current organization is still at Organization Setup, so candidate access and menu visibility are not established; wait for the explicit dashboard-ready signal before prototype or tenant-matched UI work.
+Any further tenant capture should remain non-mutating: observe visible navigation, lists, details and forms without saving, and view/filter/calendar states without changing values. Do not import, edit/delete tenant records, start a timer, issue invoices or perform another accounting operation. The observed UI is partial and cannot confirm every candidate feature or plan entitlement.
 
 ## Dependencies and uncertainty
 

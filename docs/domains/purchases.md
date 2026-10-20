@@ -1,8 +1,8 @@
 # Purchases and payables
 
-> Authorization update: this source note was researched under the original read-only instruction. The later user message permits button-level testing and low-impact synthetic record creation where safe after the explicit dashboard-ready signal. Current action boundaries are in [interaction coverage](../interaction-coverage-plan.md); that guidance supersedes older blanket read-only wording below. No tenant exploration or creation has occurred.
+> Evidence status (2026-10-20): The selected Global organization reached the Books dashboard and authenticated reference exploration has begun. The candidate workflows below remain public-document research, not tenant proof; observed screens and action boundaries are in [verified patterns](../verified-screen-patterns.md) and [interaction coverage](../interaction-coverage-plan.md). No tenant accounting record was created or changed; a temporary report Favorite toggle was reversed and verified empty.
 
-**Planning note only.** The selected Global organization is still at Organization Setup. Do not access authenticated Zoho pages or capture tenant records. Wait for an explicit dashboard-ready signal before prototyping or matching Books UI. Public help pages describe product workflows; they do not verify this Global tenant or its screens.
+**Public-doc candidate note only.** The later tenant capture verifies some purchase list and blank-form screens, separately documented in `verified-screen-patterns.md`; public help pages do not verify this Global tenant or establish every purchase workflow.
 
 ## Candidate capture scope
 

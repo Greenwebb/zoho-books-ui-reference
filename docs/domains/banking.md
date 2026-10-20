@@ -1,6 +1,6 @@
 # Banking and cash
 
-> Authorization update: this source note was researched under the original read-only instruction. The later user message permits button-level testing and low-impact synthetic record creation where safe after the explicit dashboard-ready signal. Current action boundaries are in [interaction coverage](../interaction-coverage-plan.md); that guidance supersedes older blanket read-only wording below. No tenant exploration or creation has occurred.
+> Evidence status (2026-10-20): The selected Global organization reached the Books dashboard and authenticated reference exploration has begun. The candidate workflows below remain public-document research, not tenant proof; observed screens and action boundaries are in [verified patterns](../verified-screen-patterns.md) and [interaction coverage](../interaction-coverage-plan.md). No tenant accounting record was created or changed; a temporary report Favorite toggle was reversed and verified empty.
 
 Zoho’s public Banking overview describes a flow from adding accounts and obtaining bank feeds or importing transactions, through matching or categorizing transactions, to account reconciliation. The overview also lists transaction rules, but does not document their behavior in detail. [1]
 
@@ -15,7 +15,7 @@ For planning, use generic shared screen families: account/feed setup; transactio
 
 ## Boundaries and dependencies
 
-This is public-document research only. No authenticated Zoho page, tenant record, MCP/API, or tenant data was accessed; no tenant change or capture was performed. The selected Global organization remains at Organization Setup. Defer prototype work and any Books-matched UI capture until an explicit dashboard-ready signal. When authorized, keep any capture read-only: do not connect feeds, import statements, match/categorize, create rules, or reconcile in the tenant.
+This file is public-document candidate research, not evidence of the selected Global tenant’s full banking workflow. Later tenant observations verified the Banking initial setup screen, but no bank or credit-card account was connected, no statement was imported, and no transaction was matched or reconciled. Any further tenant inspection remains non-mutating; see the current reference inventory and interaction boundary docs.
 
 The fetched help pages show a **US-EN** header and US links/support details, while offering a Global English edition selector. They are therefore not evidence that the displayed workflow or availability matches the selected Global organization, and public documentation cannot verify that tenant’s screens. The account page displays plan labels from Free through Ultimate, but the retrieved text does not establish Global-specific plan availability for the other candidate workflows. [1] [2]
 

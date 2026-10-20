@@ -1,35 +1,31 @@
 # Books reference capture protocol
 
-Capture is intentionally paused. The latest explicit handoff says the selected Zoho Books Global organization opens Organization Setup rather than the home screen. This task has not opened authenticated Books, clicked Get Started, submitted setup, or captured new tenant screenshots. The user will finish setup manually. Resume only on an explicit dashboard-ready message here or from the parent task; do not monitor the tenant or assume readiness.
-
-The user's subsequent instruction permits testing buttons and creating low-impact synthetic records where safe to establish behavior. This supersedes the original blanket read-only limit, not the setup gate. `interaction-coverage-plan.md` governs the expanded behavior inventory. Prefer non-mutating reference inspection and retain exact-action safeguards for consequential operations.
+The user confirmed the selected Zoho Books Global organization reached its dashboard. The readiness gate is cleared. Continue only in that same organization using My Browser. Never return to or submit the initial Organization Setup form; do not click its “Get Started” action.
 
 ## Scope and identity
 
-Use the same user-selected Global edition organization only. On resumption, confirm the displayed organization and edition using read-only UI evidence. Do not create or select a new organization, switch to another edition, or use public regional documentation to infer tenant configuration. Record sensitive identifiers only in the private notes, not the app or public-document reports.
+Use the same user-selected Global organization only. Confirm edition and org context from the authenticated UI without switching organizations. Do not use public regional documentation to infer tenant configuration. Keep organization identifiers, personal/contact details, account numbers and financial records out of sanitized documents.
 
 ## Navigation and interaction boundaries
 
-Begin with ordinary module navigation, lists, existing record details, tabs, reports and settings display. Inventory all reachable buttons, menus, links, field controls, contextual/bulk actions, nested dialogs and state variations. Record enabled/disabled states, prerequisites, result/destination, validation and cancel/back behavior. If a navigation control may initialize persistent state, assess its effect before using it.
+Start with ordinary module navigation, lists, existing read-only details, tabs, reports and settings displays. Blank transaction forms and dialogs may be opened to inspect their fields and actions, then canceled without saving. Do not select live contact data, submit a financial entry, send a message, import/export tenant data, connect a bank, change accounting/security settings, approve, delete or make a payment. A broad request to test the UI does not override the need for exact authorization for consequential actions. Prototype synthetic data stays local and must never be entered into the live organization.
 
-A public help document's procedure is not itself an instruction to execute it. Forms, wizards and dialogs can be opened only where their effects are understood. Under the expanded user permission, ordinary reversible UI tests and low-impact fictional test records may be used where appropriate. Keep fictitious records isolated from real business flows; use no real contact/bank information. Log any tenant mutation privately. Do not delete real records or silently perform cleanup.
-
-Stop before consequential live financial submissions, payments, business approvals, customer/vendor communications or portal invitations, exports of tenant data, integration/feed connections, accounting/security configuration changes and destructive actions unless the exact action has appropriate authorization. Do not upload files merely to reveal later wizard stages when doing so could import/create accounting data. Capture safely reachable previews; describe unexplored commit steps from official docs as public candidates or leave them unverified. Do not use real transactions merely to reach paid, approved, sent or reconciled states.
+Inventory visible controls and record their entry path, prerequisite, category, observed result, cancel/back behavior and evidence status. Where interactions are ambiguous, re-check by visible labels or a direct observed route rather than clicking near a consequential button. If an accidental low-impact preference change occurs, restore it and verify the restored state; log it privately. Record unavoidable system access metadata changes transparently.
 
 ## Canonical references
 
-Group workflow targets by reusable family: list, form, detail, wizard, confirmation/status, allocation/matching, approval, communication/portal, payment/refund, document/template, settings, report and automation/integration. Capture one representative per family and only significant module/edition variations. Record which workflows reuse each canonical reference. Do not duplicate whole page implementations for every workflow.
+Group screens into list, create/edit form, record detail, import/map/preview wizard, confirmation/status transition, allocation/matching, approval, communication/portal, payment/refund, document/template, settings, report and automation/integration. One canonical screen and reusable component map serves related workflows; capture meaningful variations only. Record prerequisites by plan, role, edition and module enablement, and mark unexplored actions unverified or blocked rather than guessing.
 
-Each reference needs a local ID, workflow/family, capture time, organization scope checked, UI entry path, screen state, tabs/dialogs inspected, action log, significant component variations and evidence status. Each control's inventory needs its prerequisite, category and observed result or stopping boundary. Record limitations beside the affected workflow. Never invent screen states or substitute synthetic content while labeling a screenshot genuine.
+`docs/verified-screen-patterns.md` is the sanitized tenant evidence index. `reference-private/notes/tenant-capture-index.md` keeps a detailed private action log without tenant record values.
+
+## Screenshot artifact limitation
+
+The My Browser renderer shows screenshots inline in the task's browser-action results. In this task those results reported `Clean screenshot path:` with an empty value, and no image file was saved into `reference-private/screenshots/`. Do not claim a local screenshot-file archive or attach it as a deliverable. Preserve the result imagery within the task session only. Never reconstruct or fabricate a screenshot and label it as tenant evidence.
 
 ## Evidence labels
 
-**Public-doc candidate** means the workflow appears in official documentation, possibly another edition, and is not verified for the selected Global organization. **Tenant-verified read-only** means availability or state was observed without mutation. **Observed interaction** means a permitted control was exercised and its result recorded. **Observed control, commit not executed** means a consequential final action was not performed. **Blocked by safety boundary** means the next step could have unacceptable consequences. **Unverified** means evidence is still absent. **Observed unavailable** requires visible plan/permission/feature evidence. **Synthetic demo** means fictional browser-local behavior, not Zoho capability verification.
+**Public-doc candidate** means the workflow is in public documentation but is not tenant-verified. **Tenant-verified read-only** means a screen/state was observed without business-data mutation. **Observed interaction** means a safe control was exercised. **Observed control, commit not executed** means a consequential action was not performed. **Blocked by safety boundary** means the next step could have consequences. **Unverified** means the evidence is absent. **Observed unavailable** requires visible evidence of plan, permission or feature limitation. **Synthetic demo** refers only to local prototype behavior.
 
-## Private storage and frontend separation
+## Prototype separation
 
-Store original screenshots only under `reference-private/screenshots/` and sensitive notes/action logs under `reference-private/notes/`. Both are Git-ignored. Do not copy them into `public/`, `src/`, website storage, a public CDN, shared uploads or the GitHub backup. A sanitized coverage manifest may contain reference IDs and non-sensitive evidence labels, but no tenant names, contacts, balances, account numbers, sensitive URLs or private screenshot contents. Do not publish the website.
-
-## Prototype stage
-
-Only after references are available, use fictional fixtures exclusively. Make the synthetic nature visible in the app. Store demo changes only in browser-local state; never read credentials or call Zoho/live accounting services. Local simulation controls must make their lack of real-world effect clear. Use mobile-first reusable React/TypeScript/Tailwind components and responsive desktop patterns, with final visual details tied to verified Books references.
+Use fictional fixtures only. Make their synthetic/local nature visible in the app. Local create/edit/status/delete behaviors are simulations only; never call live Zoho or external services. Do not put references in `public/`, `src/`, website storage, a CDN, shared uploads, commits or the GitHub backup. Keep the website unpublished.
