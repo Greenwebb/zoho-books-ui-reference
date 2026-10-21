@@ -53,6 +53,19 @@ const statusTone: Record<DemoStatus, string> = {
   Active: "green",
   Recorded: "green",
   Pending: "amber",
+  Accepted: "green",
+  Declined: "red",
+  Converted: "blue",
+  Void: "neutral",
+  "Partially Paid": "amber",
+  Applied: "green",
+  Refunded: "blue",
+  Paused: "amber",
+  Completed: "green",
+  Published: "green",
+  Reversed: "neutral",
+  Inactive: "neutral",
+  Billed: "green",
 };
 
 export function StatusPill({ status }: { status: DemoStatus }) {

@@ -10,6 +10,7 @@ interface WorkspaceContextValue {
   updateRecord: (key: DataKey, id: string, changes: Partial<DemoRecord>) => void;
   deleteRecord: (key: DataKey, id: string) => void;
   resetDemo: () => void;
+  replaceWorkspace: (workspace: WorkspaceData) => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -48,6 +49,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<WorkspaceContextValue>(() => ({
     data,
+    replaceWorkspace: (workspace) => setData(workspace),
     createRecord: (key, draft) => {
       const created: DemoRecord = { ...draft, id: `${key}-${crypto.randomUUID()}`, code: nextCode(key, data[key]) };
       setData((current) => ({ ...current, [key]: [created, ...current[key]] }));

@@ -1,35 +1,16 @@
 export type DataKey =
-  | "items"
-  | "customers"
-  | "quotes"
-  | "invoices"
-  | "recurringInvoices"
-  | "paymentsReceived"
-  | "creditNotes"
-  | "vendors"
-  | "expenses"
-  | "bills"
-  | "purchaseOrders"
-  | "recurringBills"
-  | "paymentsMade"
-  | "vendorCredits"
-  | "batchPayments"
-  | "projects"
-  | "timesheets"
-  | "journals"
-  | "budgets";
+  | "items" | "customers" | "quotes" | "invoices" | "recurringInvoices"
+  | "paymentsReceived" | "creditNotes" | "vendors" | "expenses" | "bills"
+  | "purchaseOrders" | "recurringBills" | "paymentsMade" | "vendorCredits"
+  | "batchPayments" | "projects" | "timesheets" | "journals" | "budgets";
 
 export type DemoStatus =
-  | "Draft"
-  | "Sent"
-  | "Paid"
-  | "Overdue"
-  | "Open"
-  | "Approved"
-  | "Active"
-  | "Recorded"
-  | "Pending";
+  | "Draft" | "Sent" | "Paid" | "Overdue" | "Open" | "Approved" | "Active"
+  | "Recorded" | "Pending" | "Accepted" | "Declined" | "Converted" | "Void"
+  | "Partially Paid" | "Applied" | "Refunded" | "Paused" | "Completed"
+  | "Published" | "Reversed" | "Inactive" | "Billed";
 
+export interface RecordHistory { at: string; action: string; }
 export interface DemoRecord {
   id: string;
   code: string;
@@ -43,6 +24,12 @@ export interface DemoRecord {
   description?: string;
   email?: string;
   phone?: string;
+  paidAmount?: number;
+  creditedAmount?: number;
+  stock?: number;
+  sourceId?: string;
+  details?: Record<string, unknown>;
+  history?: RecordHistory[];
 }
 
 export interface ModuleSpec {
@@ -57,5 +44,4 @@ export interface ModuleSpec {
   emptyDescription: string;
   columns: string[];
 }
-
 export type WorkspaceData = Record<DataKey, DemoRecord[]>;

@@ -11,6 +11,7 @@ import { useWorkspace } from "../state/WorkspaceContext";
 
 const primaryNav = [
   { label: "Home", path: "/", icon: Home },
+  { label: "Workflows", path: "/workflows", icon: ClipboardList },
   { label: "Items", path: "/items", icon: Package },
   { label: "Sales", path: "/invoices", icon: ShoppingCart },
   { label: "Purchases", path: "/bills", icon: ShoppingBag },
@@ -80,7 +81,7 @@ export function AppShell() {
           </button>
           <Link to="/" className="brand-lockup" aria-label="Books Demo home">
             <span className="brand-mark"><img src="/books-demo-mark.svg" alt="" /></span>
-            <span className="brand-copy"><strong>Books</strong><small>DEMO WORKSPACE</small></span>
+            <span className="brand-copy"><strong>Books</strong><small>LOCAL WORKSPACE</small></span>
           </Link>
         </div>
         <div className="top-search-wrap">
@@ -95,7 +96,7 @@ export function AppShell() {
           {searchValue && <button className="search-clear" onClick={() => setSearchValue("")} aria-label="Clear search"><X size={14} /></button>}
         </div>
         <div className="top-actions">
-          <span className="demo-chip"><span /> Demo only</span>
+          <span className="demo-chip"><span /> Browser-local</span>
           <button className="org-switcher" aria-label="Demo organization selector" onClick={() => window.dispatchEvent(new CustomEvent("books-demo-toast", { detail: "This prototype contains one fictional organization; switching is not connected." }))}>
             <span className="org-avatar">N</span><span className="org-name">Northstar Goods</span><ChevronDown size={14} />
           </button>
@@ -103,11 +104,11 @@ export function AppShell() {
             <Plus size={16} /> <span>Create</span>
           </Button>
           <button className="icon-button top-utility" aria-label="Notifications are demo-only" onClick={() => window.dispatchEvent(new CustomEvent("books-demo-toast", { detail: "There are no live notifications in this fictional workspace." }))}><Bell size={17} /></button>
-          <button className="icon-button top-utility" aria-label="Help" onClick={() => window.dispatchEvent(new CustomEvent("books-demo-toast", { detail: "Help and external links are not connected in this prototype." }))}><CircleHelp size={17} /></button>
+          <button className="icon-button top-utility" aria-label="Workflow help" onClick={() => navigate("/workflows")}><CircleHelp size={17} /></button>
         </div>
         {createOpen && (
           <div className="create-menu" role="menu">
-            <div className="menu-caption">Create a local demo record</div>
+            <div className="menu-caption">Create a record</div>
             {createLinks.map((item) => <Link role="menuitem" key={item.path} to={item.path} onClick={() => setCreateOpen(false)}>{item.label}</Link>)}
           </div>
         )}
@@ -143,7 +144,7 @@ export function AppShell() {
         <main className="main-area">
           <div className="demo-disclosure">
             <Notice tone="amber">
-              <strong>Fictional demo data.</strong> This workspace is a UI prototype. It is not connected to Zoho or any accounting service; actions only change local browser data.
+              <strong>Browser-local workspace.</strong> Records are fictional. Workflows update this browser only—no live Zoho posting, payment, email or external integration.
             </Notice>
           </div>
           <div className="screen-content"><Outlet /></div>
