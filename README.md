@@ -1,29 +1,27 @@
 # Zoho Books UI Reference & Prototype
 
-A separate, unpublished React + TypeScript + Tailwind reference/prototype for the user-selected Zoho Books Global organization. It is not Zoho Procurement and does not modify the Procurement website or repositories.
+A separate, unpublished React + TypeScript + Tailwind project for the user-selected Zoho Books Global organization. It is distinct from Zoho Procurement and does not change the Procurement project or repositories.
 
 ## Current state
 
-The Webdev project is initialized and the frontend prototype is implemented. Server/database capabilities and auto-publish remain off. The user confirmed the Books dashboard was ready before authenticated inspection. Read-only navigation covered the dashboard, module lists, selected detail tabs and blank forms, transaction-preference and bulk-item dialogs, Reports Center and Profit and Loss, Settings/General, invoice templates, Workflow Rules and Email Alerts, Banking setup, Documents Inbox, Accountant and Items. See `docs/verified-screen-patterns.md` and `docs/reference-manifest.json`; these describe partial evidence, not exhaustive coverage.
+The frontend now has 124 detailed, multi-step workflow paths across Sales (28), Purchases (27), Banking (16), Accountant (14), Items & Projects (17), and Settings & Reports (22). They share typed domain definitions, field renderers, a step/review workbench, a validated local workflow engine, a persistent browser-local store, linked record/artifact details, histories and completion receipts. The registry-generated coverage inventory is in `docs/workflow-depth/workflow-inventory.md`; engine cases/results are in `tests/fixtures/workflow-cases.json` and `docs/workflow-depth/engine-test-results.json`.
 
-The React app runs on the project Preview and its production build/typecheck passed. It uses fictional seed records and local browser storage only. The app includes reusable dashboard, module-list/detail, form, report, Settings Templates/Automation, Banking and Documents families. All mutations in the prototype affect synthetic browser-local data. The site has not been published.
+A workflow can be opened from its module list, an existing record's contextual actions, or the searchable Workflow Library. Multi-step input, allocations, item/journal rows, CSV mapping, validation, review, back/cancel, and next actions are represented as usable controls rather than explanation-only dialog placeholders. Reports filter actual fictional workspace data; document amounts use a shared line/discount/tax/shipping formula. Approvals, payment records, journal posting, bank matching, automation, and integration flows change only synthetic local state/artifacts and histories.
 
-Browser screenshots were rendered in task results, but the tool returned blank local screenshot paths; the Workflow Rules result explicitly reported a screenshot upload failure. No raw screenshot binaries are archived under `reference-private/screenshots/`. The screen map and private action index document observed structure and this limitation; they are not a screenshot-file archive. A report Favorite toggle was temporarily activated by a mis-targeted click, then reversed and verified empty. Viewing Profit and Loss updated its system “Last Visited” metadata.
+## Test and run commands
 
-## Scope and boundaries
+`pnpm test:engine` executes every registered effect and targeted invalid-payment, mismatched-selection, premature-conversion, unbalanced-journal, non-executable automation criteria, receipt-routing, import-default, and amount-calculation checks. `pnpm test` runs real-browser positive completion through all 124 workflows plus invalid-input/cancel preservation, mobile rendering/navigation, direct route health, console errors, and outbound-request detection. `pnpm build` runs strict TypeScript checking and produces the Vite bundle. `pnpm dev` serves the development preview on the project runtime.
 
-Only the same user-selected Books Global organization is in scope. No organization setup submission or “Get Started” action was performed. No tenant accounting record was created, edited, deleted, sent, imported/exported, paid, approved or otherwise changed. No bank/feed/integration connection or accounting/security setting was saved. Tenant buttons that could perform consequential actions were not activated. Uninspected workflows and final submission steps remain unverified or blocked.
+## Tenant evidence and safety
 
-The prototype is frontend-only: no backend, managed database, authentication, Zoho API, gateway or accounting service. Fictional records use a project-namespaced localStorage key. Email, export, upload, pay, approve, connect, lock and automation operations cannot reach real services. Do not publish this site.
+The user confirmed the Books dashboard was ready before authenticated observation. Tenant inspection and the fictional local prototype are kept separate: no real Zoho Books record was created, edited, deleted, sent, exported, imported, paid, approved or otherwise changed. The 124 registry flows and passing prototype tests do **not** prove that all corresponding steps were visited or finished in the selected Books tenant. See `docs/verified-screen-patterns.md` and `docs/reference-manifest.json` for the partial tenant screen inventory and remaining unverified paths.
 
-## References and project organization
+Rendered browser screenshots appeared in task results, but My Browser returned no local screenshot files; one Workflow Rules screenshot upload explicitly failed. `reference-private/` remains ignored and empty of raw image captures. A complete private raw-screenshot archive is therefore **not** claimed.
 
-`plan.md` records implementation and design. `TODO.md` tracks outcomes. `docs/books-coverage-plan.md` and `docs/domains/` contain public-document candidate research, not tenant proof. `docs/verified-screen-patterns.md` and `docs/reference-manifest.json` distinguish observed screens, prototype families and unverified states. `docs/capture-protocol.md` and `docs/interaction-coverage-plan.md` document privacy and action boundaries. `reference-private/` is Git-ignored; do not copy its contents into application source, website assets or repositories.
+## Scope and delivery boundary
 
-## Repositories and publication
+The app has no backend, database, authentication, Zoho API connection or real accounting operation. It uses fictional seed records stored under project-specific browser `localStorage` keys only. External email, portals, file import into Zoho, payment transfers, bank connections, approvals, schedules, integrations and ledger postings are never executed against outside services. CSV export can produce a local file from fictional report rows only. The prototype has not been published; Webdev server/database capabilities and auto-publish remain off.
 
-The Books managed repository remains canonical. `Greenwebb/zoho-books-ui-reference` is a separate private backup only, not a canonical switch. Exclude raw tenant references and secrets. Do not publish or enable auto-publish.
+`plan.md` documents implementation and design; `TODO.md` tracks remaining outcomes; `docs/books-coverage-plan.md` and `docs/domains/` contain public-document candidate research rather than tenant proof. The old unused screen modules that contained explanation-only placeholders have been removed; active routes lead to the shared workflow engine and data-backed reports. Raw tenant references, screenshots and secrets are excluded from application source and Git.
 
-## Remaining work
-
-Further read-only tenant coverage is still needed for unvisited workflows, detail/edit states, tax and import mapping, allocations, approvals, reconciliation and automation/integration configuration. Screenshot files could not be archived through the available browser results; retain that limitation unless a supported private screenshot-export route becomes available.
+The Books project's managed repository remains canonical. `Greenwebb/zoho-books-ui-reference` is a separate private backup only. Neither repository includes raw tenant screenshots.

@@ -16,20 +16,22 @@ The current verified screen inventory and behavior log are in `docs/verified-scr
 
 ## Frontend implementation
 
-Build the separate prototype as React + TypeScript + Tailwind with Vite on the existing managed Webdev runtime at port 3000. This is a frontend-only product: no backend, managed database, authentication, Zoho API, gateway, external integration or actual accounting operation. Use fictional records only. App state is held in memory and browser `localStorage` under a project-specific key; a persistent banner states that the data is fictional and stays in this browser. Local create/edit/delete/status changes are simulations only and never call Zoho or any external service. Email, export, upload, payment, approval and bank-connect affordances either show a safe local explanation/preview or remain visibly disabled; they cannot reach a real service.
+Build the separate prototype as React + TypeScript + Tailwind with Vite on the existing managed Webdev runtime at port 3000. This is a frontend-only product: no backend, managed database, authentication, Zoho API, gateway, external integration or actual accounting operation. Use fictional records only. App state is held in memory and project-namespaced browser `localStorage` keys; one persistent banner states that the data stays in this browser. Local create/edit/delete/status changes are concrete simulations that update typed fictional entities, auxiliary artifacts, balances/statuses, histories and linked records; they never call Zoho or another service. Email, external sharing, schedule, integration, payment transfer, bank match/provider connection and ledger posting stop at a local artifact/result. CSV export makes a browser-local file from fictional report rows only.
 
 Start from the actual Books layout: narrow dark-navy top chrome, an icon-led left navigation rail on desktop, white work canvas, slim gray borders and blue primary actions. The observed app uses compact Inter-like sans typography and ZMW defaults; the prototype uses **fictional** ZMW values and names. Reflow the navigation to a phone drawer/bottom bar, replace wide tables with touch-friendly cards, and keep transaction forms single-column on small viewports.
 
-Reusable components and screen families: `AppShell` and responsive navigation; dashboard cards/charts; module list with search/filter/sort, empty state and cards/table; transaction form and line-item editor; record detail with Overview/Transactions/History tabs; reusable dialog; Reports Center and table/chart report view; settings index, general preferences, template library and automation list; and Banking setup status. `src/data.ts` maps module labels, data columns, statuses, actions and form variants to these canonical layouts. Routes cover the dashboard, sales/purchases and other lists, representative forms/details, reports, settings/templates/automation, Banking and Accountant; unverified real workflows remain labeled as prototype concepts rather than asserted tenant capability.
+Reusable components and screen families: `AppShell` and responsive navigation; dashboard cards/charts; searchable/filterable/sortable module lists; record detail with Overview/Transactions/History; typed workflow library; shared multi-step workbench, field/line/journal/allocation/import renderers, review, completion receipt, linked artifact detail and histories; data-backed filterable reports and local CSV; template, document, settings, banking, accountant and automation families. Six domain modules define 124 flows in `src/workflows/domains/` and share `contracts.ts`, `registry.ts`, `validation.ts`, `engine.ts`, `store.tsx`, and `WorkspaceViews.tsx`. Existing lists and contextual details route into shared workflows rather than cloned screens. Registry evidence is distinct from tenant evidence; `docs/reference-manifest.json` remains the source for what is actually observed/unverified.
 
 ### Structure
 
 - `src/App.tsx`, `src/main.tsx` — client routes, app entry and provider setup.
 - `src/components/` — shared navigation, toolbar, controls, data list, status chip, dialog and form rows.
-- `src/screens/` — dashboard, list/detail, transaction editor, reports and settings families.
-- `src/data.ts`, `src/types.ts`, `src/state/WorkspaceContext.tsx` — fictional seed data, workflow registry/types and project-namespaced local-only mutations.
-- `src/styles.css` — Tailwind entry point, design tokens and responsive styles.
-- `public/manus-routes.json` — synchronized declarations for implemented UI routes.
+- `src/screens/` — dashboard, generic module list screen and data-backed report index/detail screens.
+- `src/workflows/` — shared typed flow contracts, domain registries, validator, local effect engine/store, workbench, route/detail screens and styles.
+- `src/data.ts`, `src/types.ts`, `src/state/WorkspaceContext.tsx` — fictional seed records and the namespaced local-only data provider.
+- `tests/workflows.spec.ts`, `scripts/test-workflow-engine.mjs` — every-workflow browser execution, negative validation and route/scope checks; synthetic case fixtures stay under `tests/fixtures/`.
+- `docs/workflow-depth/` — generated detailed flow inventory and reproducible engine coverage results; it does not supersede tenant evidence.
+- `src/styles.css`, `public/manus-routes.json` — responsive design system and complete route declarations for all implemented UI routes.
 - `docs/` — sanitized coverage, decisions and references; `reference-private/` remains ignored.
 
 ## Design direction

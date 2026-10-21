@@ -3,6 +3,7 @@ import type { ChangeEvent, ReactNode } from "react";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "../components/Primitives";
 import type { FlowField, FlowRow, FlowValue, FlowValues } from "./contracts";
+import { calculatedTotal } from "./engine";
 
 export interface WorkflowResource {
   id: string;
@@ -25,6 +26,7 @@ export interface WorkflowFieldProps {
   idPrefix?: string;
   onAuxChange?: (id: string, value: FlowValue) => void;
   auxValues?: FlowValues;
+  allValues?: FlowValues;
 }
 
 const MAX_ATTACHMENT_BYTES = 1024 * 1024;
@@ -107,11 +109,15 @@ function ErrorText({ id, message }: { id: string; message?: string }): ReactNode
   return message ? <span className="workflow-field-error" id={id} role="alert">{message}</span> : null;
 }
 
-function LinesField({ field, value, onChange }: { field: FlowField; value: FlowValue | undefined; onChange: (value: FlowValue) => void }) {
+function LinesField({ field, value, onChange, allValues }: { field: FlowField; value: FlowValue | undefined; onChange: (value: FlowValue) => void; allValues?: FlowValues }) {
   const rows = asRows(value);
   const hasTax = (field.options ?? []).includes("taxRate") || rows.some((row) => Object.prototype.hasOwnProperty.call(row, "taxRate"));
   const subtotal = rows.reduce((sum, row) => sum + numericRowValue(row, "quantity") * numericRowValue(row, "rate"), 0);
-  const tax = hasTax ? rows.reduce((sum, row) => sum + (numericRowValue(row, "quantity") * numericRowValue(row, "rate") * numericRowValue(row, "taxRate")) / 100, 0) : 0;
+  const discount = Math.min(subtotal, Number(allValues?.discount || 0));
+  const rowTax = hasTax ? rows.reduce((sum, row) => sum + (numericRowValue(row, "quantity") * numericRowValue(row, "rate") * numericRowValue(row, "taxRate")) / 100, 0) : 0;
+  const globalTax = Math.max(0, subtotal - discount) * Math.max(0, Number(allValues?.taxRate || 0)) / 100;
+  const tax = rowTax + globalTax;
+  const total = calculatedTotal({ ...(allValues ?? {}), lines: rows });
 
   const updateRow = (index: number, key: string, next: string | number) => {
     const nextRows = rows.map((row, rowIndex) => rowIndex === index ? { ...row, [key]: next } : row);
@@ -144,8 +150,10 @@ function LinesField({ field, value, onChange }: { field: FlowField; value: FlowV
       <Button type="button" variant="secondary" size="sm" onClick={addRow}><Plus size={14} /> Add line</Button>
       <div className="workflow-totals" aria-label={`${field.label} totals`}>
         <span>Subtotal <strong>{formatAmount(subtotal)}</strong></span>
-        {hasTax && <span>Tax <strong>{formatAmount(tax)}</strong></span>}
-        <span className="workflow-total-emphasis">Total <strong>{formatAmount(subtotal + tax)}</strong></span>
+        {discount > 0 && <span>Discount <strong>−{formatAmount(discount)}</strong></span>}
+        {(hasTax || globalTax > 0) && <span>Tax <strong>{formatAmount(tax)}</strong></span>}
+        {Number(allValues?.shipping || 0) > 0 && <span>Shipping <strong>{formatAmount(Number(allValues?.shipping || 0))}</strong></span>}
+        <span className="workflow-total-emphasis">Total <strong>{formatAmount(total)}</strong></span>
       </div>
     </div>
   );
@@ -194,7 +202,7 @@ function AllocationField({ field, value, onChange, resources }: { field: FlowFie
   return <div className="workflow-allocation">
     <div className="workflow-allocation-options" aria-label={`${field.label} records to allocate`}>
       {options.length === 0 && <p className="workflow-muted">No matching records are available in this local workspace.</p>}
-      {options.map((option) => <label className="workflow-check-row" key={option.id}><input type="checkbox" checked={selected.has(option.id)} onChange={() => toggle(option.id)} /> <span><strong>{option.name}</strong><small>{option.code ?? option.party ?? option.status} · Available {formatAmount(option.amount)}</small></span></label>)}
+      {options.map((option) => <label className="workflow-check-row" key={option.id} data-resource-id={option.id}><input type="checkbox" checked={selected.has(option.id)} onChange={() => toggle(option.id)} /> <span><strong>{option.name}</strong><small>{option.code ?? option.party ?? option.status} · Available {formatAmount(option.amount)}</small></span></label>)}
     </div>
     {rows.length > 0 && <div className="workflow-grid-scroll"><table className="workflow-grid" aria-label={`${field.label} allocation amounts`}><thead><tr><th>Record</th><th>Amount</th></tr></thead><tbody>{rows.map((row, index) => { const option = options.find((item) => item.id === String(row.recordId ?? "")); return <tr key={`allocation-${index}`}><td>{option?.name ?? String(row.recordId ?? "Unknown record")}</td><td><input aria-label={`Allocation amount for ${option?.name ?? String(row.recordId ?? "Unknown record")}`} type="number" min="0" step="0.01" value={String(row.amount ?? "")} onChange={(event) => updateAmount(String(row.recordId ?? ""), event.target.value)} /></td></tr>; })}</tbody></table></div>}
     <div className="workflow-totals"><span>Allocated <strong>{formatAmount(allocated)}</strong></span></div>
@@ -255,12 +263,12 @@ function RecordOptions({ field, value, onChange, resources, multiple }: { field:
   const options = resources(field.collection ?? "");
   if (multiple) {
     const selected = new Set(asStrings(value));
-    return <div className="workflow-record-options" aria-label={`${field.label} options`}>{options.length === 0 && <p className="workflow-muted">No records are available in this local workspace.</p>}{options.map((option) => <label className="workflow-check-row" key={option.id}><input type="checkbox" checked={selected.has(option.id)} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); onChange(Array.from(next)); }} /><span><strong>{option.name}</strong><small>{optionLabel(option)} · {option.status}</small></span></label>)}</div>;
+    return <div className="workflow-record-options" aria-label={`${field.label} options`}>{options.length === 0 && <p className="workflow-muted">No records are available in this local workspace.</p>}{options.map((option) => <label className="workflow-check-row" key={option.id} data-resource-id={option.id}><input type="checkbox" checked={selected.has(option.id)} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); onChange(Array.from(next)); }} /><span><strong>{option.name}</strong><small>{optionLabel(option)} · {option.status}</small></span></label>)}</div>;
   }
   return <select aria-label={field.label} value={asString(value)} onChange={(event) => onChange(event.target.value)}><option value="">Choose a record</option>{options.map((option) => <option key={option.id} value={option.id}>{optionLabel(option)}</option>)}</select>;
 }
 
-export function WorkflowField({ field, value, onChange, resources, error, idPrefix = "workflow", onAuxChange, auxValues }: WorkflowFieldProps) {
+export function WorkflowField({ field, value, onChange, resources, error, idPrefix = "workflow", onAuxChange, auxValues, allValues }: WorkflowFieldProps) {
   const inputId = fieldId(idPrefix, field.id);
   const errorId = `${inputId}-error`;
   const describedBy = error ? errorId : undefined;
@@ -271,7 +279,9 @@ export function WorkflowField({ field, value, onChange, resources, error, idPref
       control = <input {...common} type={field.type} value={asString(value)} placeholder={field.placeholder} required={field.required} onChange={(event) => onChange(event.target.value)} />;
       break;
     case "number":
-      control = <input {...common} type="number" value={asString(value)} min={field.min} placeholder={field.placeholder} required={field.required} onChange={(event) => onChange(event.target.value === "" ? "" : Number(event.target.value))} />;
+      control = field.id === "amount" && asRows(allValues?.lines).length > 0
+        ? <div className="workflow-derived-amount" aria-label={`${field.label} calculated from line items`}>{formatAmount(calculatedTotal(allValues ?? {}))}<small>Calculated from line items</small></div>
+        : <input {...common} type="number" value={asString(value)} min={field.min} placeholder={field.placeholder} required={field.required} onChange={(event) => onChange(event.target.value === "" ? "" : Number(event.target.value))} />;
       break;
     case "select":
       control = <select {...common} value={asString(value)} required={field.required} onChange={(event) => onChange(event.target.value)}><option value="">Choose an option</option>{(field.options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}</select>;
@@ -289,7 +299,7 @@ export function WorkflowField({ field, value, onChange, resources, error, idPref
       control = <RecordOptions field={field} value={value} onChange={onChange} resources={resources} multiple />;
       break;
     case "lines":
-      control = <LinesField field={field} value={value} onChange={onChange} />;
+      control = <LinesField field={field} value={value} onChange={onChange} allValues={allValues} />;
       break;
     case "journal-lines":
       control = <JournalLinesField field={field} value={value} onChange={onChange} resources={resources} />;
@@ -306,7 +316,7 @@ export function WorkflowField({ field, value, onChange, resources, error, idPref
     default:
       control = null;
   }
-  return <div className={`workflow-field workflow-field-${field.type}`}>
+  return <div className={`workflow-field workflow-field-${field.type}`} data-field-id={field.id}>
     {field.type !== "checkbox" && <label className="workflow-field-label" htmlFor={field.type === "lines" || field.type === "journal-lines" || field.type === "allocations" || field.type === "csv" ? undefined : inputId}>{field.label}{field.required && <span aria-hidden="true"> *</span>}</label>}
     {field.help && <p className="workflow-field-help">{field.help}</p>}
     {control}

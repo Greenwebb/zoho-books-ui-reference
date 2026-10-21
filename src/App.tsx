@@ -3,15 +3,15 @@ import { AppShell } from "./components/AppShell";
 import { moduleSpecs } from "./data";
 import { Dashboard } from "./screens/Dashboard";
 import { ListScreen } from "./screens/ListScreen";
-import { ReportsIndex, ReportDetail } from "./screens/WorkspaceScreens";
+import { ReportsIndex, ReportDetail } from "./screens/ReportsWorkspace";
 import { WorkflowHub, WorkflowWorkbench, WorkflowResult, WorkflowResourceDetail } from "./workflows/WorkflowWorkbench";
 import { EntityWorkflowDetail, WorkflowDomainScreen } from "./workflows/WorkspaceViews";
-import { allFlows, createFlowFor } from "./workflows/registry";
+import { createFlowFor } from "./workflows/registry";
 import type { ModuleSpec } from "./types";
 
 const formSpecs = [...new Map(moduleSpecs.filter((spec) => spec.createPath).map((spec) => [spec.createPath!, spec])).values()];
 function CreateRoute({ spec }: { spec: ModuleSpec }) {
-  const flow = createFlowFor(spec.key) ?? allFlows.find((item) => item.effect.target === spec.key && item.effect.kind === "payment");
+  const flow = createFlowFor(spec.key);
   return <Navigate to={flow ? `/workflows/${flow.id}` : "/workflows"} replace />;
 }
 function WorkflowEntry() {

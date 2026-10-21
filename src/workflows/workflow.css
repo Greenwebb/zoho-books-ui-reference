@@ -183,3 +183,24 @@
   .workflow-footer-actions .button { flex: 1; }
   .workflow-result-meta { flex-direction: column; gap: 4px; }
 }
+
+.workflow-domain-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 24px; }
+.workflow-domain-action { display: inline-flex; align-items: center; gap: 8px; padding: 11px 13px; border: 1px solid #dde5ef; border-radius: 8px; background: #fff; color: #335473; font-size: 12px; transition: border-color .15s, background .15s; }
+.workflow-domain-action:hover { border-color: #408dfb; background: #f4f8ff; }
+.workflow-domain-action svg:last-child { margin-left: 6px; color: #7b92af; }
+.workflow-artifact-grid { display: flex; flex-wrap: wrap; gap: 12px; padding: 16px; }
+.workflow-artifact-card { flex: 1 1 210px; min-width: 0; max-width: 360px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+.workflow-artifact-card strong { color: #253d58; }
+.workflow-artifact-card small { color: #7a8b9e; }
+.workflow-artifact-card > span:last-child { display: flex; align-items: center; gap: 6px; color: #408dfb; font-size: 11px; }
+.workflow-document { padding: 18px; background: #fff; overflow-x: auto; }
+.workflow-document h2 { color: #223e5c; margin: 0 0 20px; }
+.workflow-document h3 { margin-top: 0; color: #3c5879; }
+.workflow-document .records-table { margin: 22px 0; }
+.workflow-document small { color: #8090a4; }
+.workflow-resource-layout .detail-grid { padding: 18px; }
+@media (max-width: 700px) { .workflow-domain-action { flex: 1 1 100%; font-size: 13px; padding: 14px; } .workflow-domain-action svg:last-child { margin-left: auto; } .workflow-artifact-card { max-width: none; flex-basis: 100%; } .workflow-document { padding: 6px; } .workflow-field-label { font-size: 12px; } .workflow-field input, .workflow-field select, .workflow-field textarea { min-height: 42px; font-size: 13px; } .workflow-field-help { font-size: 11px; } }
+
+.workflow-derived-amount { min-height: 36px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 9px; border: 1px solid #dbe8f3; border-radius: 5px; color: #36536f; background: #f7fbff; font-variant-numeric: tabular-nums; font-weight: 650; }
+.workflow-derived-amount small { color: #7b91a7; font-size: 9px; font-weight: 400; }
+.workflow-totals > span { white-space: nowrap; }

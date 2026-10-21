@@ -6,6 +6,7 @@ import type { FlowDefinition, FlowField, FlowReceipt, FlowRow, FlowValue, FlowVa
 import { allFlows } from "./registry";
 import { useWorkflow } from "./store";
 import { validateValues } from "./validation";
+import { calculatedTotal } from "./engine";
 import { WORKFLOW_DEFAULT_DATE, WorkflowField, type ResourceLookup, type WorkflowResource } from "./WorkflowFields";
 import "./workflow.css";
 
@@ -68,6 +69,10 @@ function prefillFromRecord(flow: FlowDefinition, values: FlowValues, recordId: s
   if (!recordId) return values;
   const next: FlowValues = { ...values };
   const selectedByCollection = new Map<string, WorkflowResource>();
+  if (flow.effect.collection) {
+    const artifact = resources(flow.effect.collection).find((item) => item.id === recordId);
+    if (artifact) { selectedByCollection.set(flow.effect.collection, artifact); next.record = artifact.id; }
+  }
   for (const field of flow.steps.flatMap((step) => step.fields)) {
     if (field.type !== "record" && field.type !== "multi-record") continue;
     const match = resourceMatches(resources(field.collection ?? ""), recordId);
@@ -89,7 +94,7 @@ function prefillFromRecord(flow: FlowDefinition, values: FlowValues, recordId: s
       if (option) next[field.id] = option.id;
     }
     if (flow.effect.action === "reverse" && field.type === "journal-lines" && Array.isArray(sourceValues.lines)) next[field.id] = (sourceValues.lines as FlowRow[]).map((row) => ({ ...row, debit: row.credit || 0, credit: row.debit || 0 }));
-    const selected = selectedByCollection.get(field.collection ?? "");
+    const selected = selectedByCollection.get(field.collection ?? flow.effect.collection ?? "");
     if (!selected) continue;
     if (field.type === "record") next[field.id] = selected.id;
     if (field.type === "multi-record") next[field.id] = [selected.id];
@@ -180,7 +185,7 @@ function StepRail({ flow, stepIndex, review }: { flow: FlowDefinition; stepIndex
 }
 
 function ReviewPanel({ flow, values, resources, errors }: { flow: FlowDefinition; values: FlowValues; resources: ResourceLookup; errors: Record<string, string> }) {
-  return <div className="workflow-review"><div className="workflow-review-intro"><Sparkles size={19} /><div><h2>Review {flow.title}</h2><p>Check the values, amounts, and editable tables before creating this local workflow receipt.</p></div></div>{Object.keys(errors).length > 0 && <Notice tone="amber"><span role="alert">Resolve the highlighted fields before completing this workflow. Nothing has been executed.</span></Notice>} {flow.steps.map((step) => <section className="workflow-review-section" key={step.title}><div className="workflow-review-heading"><h3>{step.title}</h3><span>{step.description}</span></div><div className="workflow-review-grid">{step.fields.map((field) => <div className="workflow-review-value" key={field.id}><div><span>{field.label}</span>{errors[field.id] && <small className="workflow-field-error">{errors[field.id]}</small>}</div><ValueSummary field={field} value={values[field.id]} resources={resources} /></div>)}</div></section>)}</div>;
+  return <div className="workflow-review"><div className="workflow-review-intro"><Sparkles size={19} /><div><h2>Review {flow.title}</h2><p>Check the values, amounts, and editable tables before completing this workflow.</p></div></div>{Object.keys(errors).length > 0 && <Notice tone="amber"><span role="alert">Resolve the highlighted fields before completing this workflow. Nothing has been changed.</span></Notice>} {flow.steps.map((step) => <section className="workflow-review-section" key={step.title}><div className="workflow-review-heading"><h3>{step.title}</h3><span>{step.description}</span></div><div className="workflow-review-grid">{step.fields.map((field) => <div className="workflow-review-value" key={field.id}><div><span>{field.label}</span>{errors[field.id] && <small className="workflow-field-error">{errors[field.id]}</small>}</div><ValueSummary field={field} value={field.id === "amount" && Array.isArray(values.lines) && values.lines.length ? calculatedTotal(values) : values[field.id]} resources={resources} /></div>)}</div></section>)}</div>;
 }
 
 export function WorkflowWorkbench() {
@@ -191,23 +196,15 @@ export function WorkflowWorkbench() {
   const workflow = useWorkflow();
   const resources = useCallback<ResourceLookup>((collection) => workflow.resources(collection), [workflow]);
   const flow = useMemo(() => flowCatalog.find((candidate) => candidate.id === flowId), [flowId]);
-  const initialDraft = useMemo(() => flow ? createInitialDraft(flow, recordId, resources) : null, [flow, recordId, resources]);
+  // WorkflowEntry is keyed by flow and record; rehydrate only on that mount,
+  // never on provider/resource refreshes that could discard in-progress input.
+  const [initialDraft] = useState(() => flow ? createInitialDraft(flow, recordId, resources) : null);
   const [values, setValues] = useState<FlowValues>(() => initialDraft?.values ?? {});
   const [stepIndex, setStepIndex] = useState(() => initialDraft?.stepIndex ?? 0);
   const [review, setReview] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [savedAt, setSavedAt] = useState(initialDraft?.updatedAt ?? "");
   const completedRef = useRef(false);
-
-  useEffect(() => {
-    if (!flow || !initialDraft) return;
-    setValues(initialDraft.values);
-    setStepIndex(initialDraft.stepIndex);
-    setReview(false);
-    setErrors({});
-    setSavedAt(initialDraft.updatedAt);
-    completedRef.current = false;
-  }, [flow?.id, initialDraft]);
 
   useEffect(() => {
     if (!flow || review) return;
@@ -247,7 +244,7 @@ export function WorkflowWorkbench() {
     }
   };
   const discard = () => { safeRemoveDraft(flow.id); navigate("/workflows"); };
-  return <div className="workflow-screen"><div className="workflow-breadcrumb"><Link to="/workflows"><ArrowLeft size={14} /> Workflow library</Link><span>/</span><span>{flow.domain}</span></div><PageHeading eyebrow={flow.domain} title={flow.title} description={flow.description} actions={<Button variant="ghost" onClick={() => navigate("/workflows")}><XIcon /> Cancel</Button>} /><div className="workflow-workbench"><StepRail flow={flow} stepIndex={stepIndex} review={review} /><main className="workflow-main"><div className="workflow-main-header"><div><span className="workflow-progress-label">{review ? "Final review" : `Step ${stepIndex + 1} of ${flow.steps.length}`}</span><h2>{review ? "Review and complete" : step.title}</h2><p>{review ? "Confirm the complete set of values before the local receipt is created." : step.description}</p></div><span className="workflow-save-status">{savedAt ? "Draft saved locally" : "New draft"}</span></div>{!review && <div className="workflow-field-groups">{step.fields.map((field) => <WorkflowField key={field.id} field={field} value={values[field.id]} onChange={(value) => updateValue(field.id, value)} resources={resources} error={errors[field.id]} idPrefix={`${flow.id}-${stepIndex}`} onAuxChange={updateValue} auxValues={values} />)}</div>}{review && <ReviewPanel flow={flow} values={values} resources={resources} errors={errors} />}{errors._form && <div className="workflow-form-error" role="alert">{errors._form}</div>}<footer className="workflow-footer"><div className="workflow-footer-left"><Button type="button" variant="ghost" onClick={discard}><Trash2 size={14} /> Discard draft</Button></div><div className="workflow-footer-actions"><Button type="button" variant="secondary" onClick={goBack} disabled={!review && stepIndex === 0}><ArrowLeft size={14} /> Back</Button>{review ? <Button type="button" onClick={complete} disabled={completedRef.current}>{completedRef.current ? "Completing…" : `Complete ${flow.title}`}<Check size={14} /></Button> : <Button type="button" onClick={goNext}>Next <ArrowRight size={14} /></Button>}</div></footer><div className="workflow-confirmation-note">Completion creates a browser-local receipt for this flow. It does not send messages, call an API, charge a payment method, or change an external Books account.</div></main></div></div>;
+  return <div className="workflow-screen"><div className="workflow-breadcrumb"><Link to="/workflows"><ArrowLeft size={14} /> Workflow library</Link><span>/</span><span>{flow.domain}</span></div><PageHeading eyebrow={flow.domain} title={flow.title} description={flow.description} actions={<Button variant="ghost" onClick={() => navigate("/workflows")}><XIcon /> Cancel</Button>} /><div className="workflow-workbench"><StepRail flow={flow} stepIndex={stepIndex} review={review} /><main className="workflow-main"><div className="workflow-main-header"><div><span className="workflow-progress-label">{review ? "Final review" : `Step ${stepIndex + 1} of ${flow.steps.length}`}</span><h2>{review ? "Review and complete" : step.title}</h2><p>{review ? "Confirm the complete set of values before creating this workflow." : step.description}</p></div><span className="workflow-save-status">{savedAt ? "Draft saved locally" : "New draft"}</span></div>{!review && <div className="workflow-field-groups">{step.fields.map((field) => <WorkflowField key={field.id} field={field} value={values[field.id]} onChange={(value) => updateValue(field.id, value)} resources={resources} error={errors[field.id]} idPrefix={`${flow.id}-${stepIndex}`} onAuxChange={updateValue} auxValues={values} allValues={values} />)}</div>}{review && <ReviewPanel flow={flow} values={values} resources={resources} errors={errors} />}{errors._form && <div className="workflow-form-error" role="alert">{errors._form}</div>}<footer className="workflow-footer"><div className="workflow-footer-left"><Button type="button" variant="ghost" onClick={discard}><Trash2 size={14} /> Discard draft</Button></div><div className="workflow-footer-actions"><Button type="button" variant="secondary" onClick={goBack} disabled={!review && stepIndex === 0}><ArrowLeft size={14} /> Back</Button>{review ? <Button type="button" onClick={complete} disabled={completedRef.current}>{completedRef.current ? "Completing…" : `Complete ${flow.title}`}<Check size={14} /></Button> : <Button type="button" onClick={goNext}>Next <ArrowRight size={14} /></Button>}</div></footer></main></div></div>;
 }
 
 function XIcon() { return <span aria-hidden="true">×</span>; }
@@ -265,7 +262,7 @@ export function WorkflowResult() {
   const receipt = workflow.store.receipts.find((candidate) => candidate.id === receiptId);
   if (!receipt) return <NotFound title="Receipt not found" description="This workflow receipt is not available in this browser." />;
   const flow = flowCatalog.find((candidate) => candidate.id === receipt.flowId);
-  return <div className="workflow-screen"><PageHeading eyebrow="Workflow result" title={receipt.title} description={receipt.summary} actions={<Button variant="secondary" onClick={() => navigate("/workflows")}><ClipboardList size={14} /> Workflow library</Button>} /><div className="workflow-result-layout"><main><Panel><div className="workflow-result-hero"><CheckCircle2 size={30} /><div><h2>{flow?.completionTitle ?? "Workflow completed"}</h2><p>{flow?.completionMessage ?? receipt.summary}</p><ScopeMeta /></div></div><div className="workflow-result-meta"><span>Completed {new Date(receipt.completedAt).toLocaleString()}</span><span>Receipt {receipt.id}</span></div><div className="workflow-result-disclosure">Confirmation only: this records what you entered locally. No actual messages were sent, payments made, or external records changed.</div></Panel><Panel title="Persisted summary"><ReceiptValues flow={flow} receipt={receipt} resources={resources} /></Panel></main><aside className="workflow-result-aside"><Panel title="Useful links"><div className="workflow-link-list">{receipt.links.map((link) => <Link key={link.path} to={link.path}><ArrowRight size={14} /> {link.label}</Link>)}{flow?.nextFlowIds?.map((nextId) => { const nextFlow = flowCatalog.find((candidate) => candidate.id === nextId); return nextFlow ? <Link key={nextFlow.id} to={`/workflows/${nextFlow.id}`}><Play size={14} /> Next: {nextFlow.title}</Link> : null; })}</div></Panel><Panel title="What next"><p className="workflow-panel-copy">Use the links above to inspect the recorded artifact or start a related local workflow. The receipt remains available until this browser's local storage is cleared.</p></Panel></aside></div></div>;
+  return <div className="workflow-screen"><PageHeading eyebrow="Workflow result" title={receipt.title} description={receipt.summary} actions={<Button variant="secondary" onClick={() => navigate("/workflows")}><ClipboardList size={14} /> Workflow library</Button>} /><div className="workflow-result-layout"><main><Panel><div className="workflow-result-hero"><CheckCircle2 size={30} /><div><h2>{flow?.completionTitle ?? "Workflow completed"}</h2><p>{flow?.completionMessage ?? receipt.summary}</p></div></div><div className="workflow-result-meta"><span>Completed {new Date(receipt.completedAt).toLocaleString()}</span><span>Receipt {receipt.id}</span></div></Panel><Panel title="Completed values"><ReceiptValues flow={flow} receipt={receipt} resources={resources} /></Panel></main><aside className="workflow-result-aside"><Panel title="Next steps"><div className="workflow-link-list">{receipt.links.map((link) => <Link key={link.path} to={link.path}><ArrowRight size={14} /> {link.label}</Link>)}{flow?.nextFlowIds?.map((nextId) => { const nextFlow = flowCatalog.find((candidate) => candidate.id === nextId); return nextFlow ? <Link key={nextFlow.id} to={`/workflows/${nextFlow.id}`}><Play size={14} /> Next: {nextFlow.title}</Link> : null; })}</div></Panel></aside></div></div>;
 }
 
 function artifactValueRows(artifact: LocalArtifact): Array<[string, FlowValue]> {

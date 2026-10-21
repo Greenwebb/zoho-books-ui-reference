@@ -21,7 +21,8 @@ export function calculatedTotal(values: FlowValues) {
   const discount = Math.min(subtotal, Math.max(0, number(values, "discount")));
   const taxRate = Math.max(0, number(values, "taxRate"));
   const rowTax = lines.reduce((sum, row) => sum + Math.max(0, Number(row.quantity || 0)) * Math.max(0, Number(row.rate || 0)) * Math.max(0, Number(row.taxRate || 0)) / 100, 0);
-  return round((subtotal - discount) * (values.taxInclusive ? 1 : 1 + taxRate / 100) + (values.taxInclusive ? 0 : rowTax) + number(values, "shipping") + number(values, "adjustment"));
+  const globalTax = (subtotal - discount) * taxRate / 100;
+  return round(subtotal - discount + (values.taxInclusive ? 0 : rowTax + globalTax) + number(values, "shipping") + number(values, "adjustment"));
 }
 function nextCode(key: DataKey, records: DemoRecord[]) {
   let max = 100;
@@ -39,6 +40,16 @@ function resolveParty(data: WorkspaceData, store: FlowStore, value: string) {
   return store.artifacts.find((item) => item.id === value)?.name ?? value;
 }
 function allocationRows(values: FlowValues): FlowRow[] { const arrays = Object.entries(values).filter(([key]) => /allocation|bill|invoice|transaction/i.test(key)).map(([, value]) => rowValues(value)); return arrays.find((rows) => rows.length && rows[0].recordId !== undefined) ?? rowValues(values.allocations); }
+function assertTransition(flow: FlowDefinition, record: DemoRecord) {
+  const sources: Record<string, DemoStatus[]> = {
+    "send-quote": ["Draft"], "accept-quote": ["Sent"], "decline-quote": ["Draft", "Sent"], "send-invoice": ["Draft"],
+    "submit-purchase-order": ["Draft"], "approve-purchase-order": ["Open", "Sent"], "approve-bill": ["Open", "Pending"],
+    "publish-journal": ["Draft"], "pause-recurring-invoice": ["Active"], "pause-recurring-bill": ["Active"],
+    "resume-recurring-invoice": ["Paused"], "resume-recurring-bill": ["Paused"], "close-project": ["Active"],
+  };
+  const allowed = sources[flow.id];
+  if (allowed && !allowed.includes(record.status)) throw new Error(`${record.code} must be ${allowed.join(" or ")} before ${flow.title.toLowerCase()}.`);
+}
 function attachHistory(record: DemoRecord, at: string, action: string) { record.history = [...(record.history ?? [{ at: `${record.date}T09:00:00.000Z`, action: "Created" }]), { at, action }]; }
 function parseCsv(input: string): string[][] {
   const rows: string[][] = []; let row: string[] = [], cell = "", quoted = false;
@@ -67,7 +78,9 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
   const resourceLink = (record: LocalArtifact) => links.push({ label: record.name, path: `/workflow-resources/${record.id}` });
   const create = (key: DataKey, input: FlowValues, status?: DemoStatus, sourceId?: string): DemoRecord => {
     const defaults: Partial<Record<DataKey, DemoStatus>> = { customers: "Active", vendors: "Active", items: "Active", projects: "Active", recurringInvoices: "Active", recurringBills: "Active", expenses: "Recorded", timesheets: "Recorded", paymentsReceived: "Paid", paymentsMade: "Paid", creditNotes: "Open", vendorCredits: "Open", bills: "Open", purchaseOrders: "Draft" };
-    const record: DemoRecord = { id: `${key}-${crypto.randomUUID()}`, code: nextCode(key, workspace[key]), name: text(input, "name", "subject", "title", "displayName") || `${moduleByKey[key].entityLabel} ${nextCode(key, workspace[key])}`, party: resolveParty(workspace, store, text(input, "party", "customer", "vendor", "project", "reference")), date: text(input, "date", "startDate", "paymentDate") || at.slice(0, 10), dueDate: text(input, "dueDate", "endDate", "nextDate") || undefined, amount: calculatedTotal(input), status: status ?? defaults[key] ?? "Draft", category: text(input, "category", "frequency", "paymentMode", "billingMethod") || undefined, description: text(input, "description", "notes", "remarks") || undefined, email: text(input, "email") || undefined, phone: text(input, "phone") || undefined, sourceId, details: structuredClone(input), history: [{ at, action: `Created · ${flow.title}` }] };
+    const lines = rowValues(input.lines ?? input.items); const calculated = calculatedTotal(input);
+    const total = lines.length ? calculated : Math.max(0, number(input, "amount", "budget", "rate", "salesRate", "paymentAmount", "hours") || calculated);
+    const record: DemoRecord = { id: `${key}-${crypto.randomUUID()}`, code: nextCode(key, workspace[key]), name: text(input, "name", "subject", "title", "displayName") || `${moduleByKey[key].entityLabel} ${nextCode(key, workspace[key])}`, party: resolveParty(workspace, store, text(input, "party", "customer", "vendor", "project", "reference")), date: text(input, "date", "startDate", "paymentDate") || at.slice(0, 10), dueDate: text(input, "dueDate", "endDate", "nextDate") || undefined, amount: total, status: status ?? defaults[key] ?? "Draft", category: text(input, "category", "frequency", "paymentMode", "billingMethod") || undefined, description: text(input, "description", "notes", "remarks") || undefined, email: text(input, "email") || undefined, phone: text(input, "phone") || undefined, sourceId, details: structuredClone(input), history: [{ at, action: `Created · ${flow.title}` }] };
     if (key === "items") record.stock = number(input, "quantity", "openingStock");
     if (key === "timesheets") { record.amount = number(input, "quantity", "hours"); record.party = resolveParty(workspace, store, text(input, "project")) || record.party; }
     workspace[key].unshift(record); entityLink(key, record); return record;
@@ -117,6 +130,7 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
     }
     case "status": {
       const record = findEntity(workspace, effect.entity, selectedId);
+      assertTransition(flow, record);
       const status = effect.status ?? "Approved";
       if (effect.entity === "journals" && /publish/i.test(effect.action ?? flow.id)) {
         const journalLines = rowValues(record.details?.lines); const debit = journalLines.reduce((sum, row) => sum + Number(row.debit || 0), 0); const credit = journalLines.reduce((sum, row) => sum + Number(row.credit || 0), 0);
@@ -133,8 +147,12 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
       const record = findEntity(workspace, effect.entity, selectedId);
       if (!effect.target) throw new Error("Choose a destination record type.");
       if (["Converted", "Void", "Declined"].includes(record.status)) throw new Error("This record has already been converted or is unavailable for conversion.");
-      const converted = create(effect.target, { ...(record.details as FlowValues), name: record.name, party: record.party, date: at.slice(0, 10), amount: record.amount, ...values }, effect.status, record.id);
-      record.status = "Converted"; attachHistory(record, at, `Converted to ${converted.code}`); entityLink(effect.entity!, record); break;
+      if (flow.id === "convert-quote-to-invoice" && record.status !== "Accepted") throw new Error("Accept the quote before converting it to an invoice.");
+      if (flow.id === "convert-purchase-order-to-bill" && record.status !== "Approved") throw new Error("Approve the purchase order before converting it to a bill.");
+      if (flow.id === "convert-expense-to-billable" && (record.status === "Billed" || record.details?.billable !== true)) throw new Error("Mark the expense as billable and keep it unbilled before conversion.");
+      const sourceParty = record.details?.party ? resolveParty(workspace, store, String(record.details.party)) : record.party;
+      const converted = create(effect.target, { ...(record.details as FlowValues), name: record.name, party: sourceParty, date: at.slice(0, 10), amount: record.amount, ...values }, effect.status, record.id);
+      record.status = flow.id === "convert-expense-to-billable" ? "Billed" : "Converted"; attachHistory(record, at, `Converted to ${converted.code}`); entityLink(effect.entity!, record); break;
     }
     case "payment": {
       if (!effect.entity) throw new Error("Select the payment document type.");
@@ -144,10 +162,16 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
       const total = round(rows.reduce((sum, row) => sum + Number(row.amount), 0));
       const stated = number(values, "amount", "paymentAmount");
       if (stated > 0 && Math.abs(stated - total) > 0.005) throw new Error("The payment amount must equal the sum of its allocations.");
+      const allocatedIds = [...new Set(rows.map((row) => String(row.recordId)))].sort();
+      const selectedRecord = text(values, "record", "bill", "invoice");
+      if (selectedRecord && (allocatedIds.length !== 1 || allocatedIds[0] !== selectedRecord)) throw new Error("Payment allocation must belong to the selected invoice or bill.");
       const parties = new Set(rows.map((row) => findEntity(workspace, effect.entity, String(row.recordId)).party));
       if (parties.size > 1 && effect.target !== "batchPayments") throw new Error("Allocate one payment only to documents for the same customer or vendor.");
       const selectedRecords = Array.isArray(values.records) ? values.records.map(String) : [];
-      if (effect.target === "batchPayments" && selectedRecords.length && rows.some((row) => !selectedRecords.includes(String(row.recordId)))) throw new Error("Every allocated bill must be selected in the batch’s first step.");
+      if (effect.target === "batchPayments" && selectedRecords.length) {
+        const normalized = [...new Set(selectedRecords)].sort();
+        if (normalized.length !== allocatedIds.length || normalized.some((id, index) => id !== allocatedIds[index])) throw new Error("Every selected document must have exactly one payment allocation; remove unallocated selections.");
+      }
       for (const row of rows) applyPayment(effect.entity, findEntity(workspace, effect.entity, String(row.recordId)), Number(row.amount));
       create(effect.target ?? (effect.entity === "invoices" ? "paymentsReceived" : "paymentsMade"), { ...values, amount: total, party: [...parties].join(", "), name: text(values, "name") || `Payment · ${total.toFixed(2)}` }, "Paid", selectedId || undefined);
       if (effect.target === "batchPayments") for (const party of parties) { const ownRows = rows.filter((row) => findEntity(workspace, effect.entity, String(row.recordId)).party === party); create("paymentsMade", { ...values, name: `Batch payment · ${party}`, party, amount: ownRows.reduce((sum, row) => sum + Number(row.amount), 0), allocations: ownRows }, "Paid"); }
@@ -185,7 +209,11 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
       if (lines.length < 2 || debit <= 0 || Math.abs(debit - credit) > 0.005 || lines.some((row) => !row.account || (Number(row.debit) > 0 && Number(row.credit) > 0))) throw new Error("Journal must balance with at least two accounts and separate debit/credit lines.");
       const reversed = effect.action === "reverse";
       if (reversed) { const original = findEntity(workspace, "journals", selectedId); if (!["Published", "Recorded"].includes(original.status)) throw new Error("Publish the original journal before reversing it."); original.status = "Reversed"; attachHistory(original, at, "Reversal created"); entityLink("journals", original); }
-      create("journals", { ...values, amount: debit, lines }, effect.status ?? "Draft", reversed ? selectedId : undefined); break;
+      const opening = effect.action === "opening-balance";
+      const posted = reversed || opening;
+      const journal = create("journals", { ...values, amount: debit, lines }, posted ? "Published" : effect.status ?? "Draft", reversed ? selectedId : undefined);
+      if (posted) for (const line of lines) { const account = findArtifact(store, String(line.account)); account.values.balance = round(Number(account.values.balance ?? account.values.openingBalance ?? 0) + Number(line.debit || 0) - Number(line.credit || 0)); account.history.push({ at, action: `Journal ${journal.code} posted locally` }); }
+      break;
     }
     case "time-invoice": {
       const ids = Array.isArray(values.records) ? values.records.map(String) : selectedId ? [selectedId] : [];
@@ -234,16 +262,25 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
     case "bank-match": {
       if (/undo/i.test(effect.action ?? flow.id)) {
         const transaction = findArtifact(store, selectedId); if (transaction.status !== "Matched" || transaction.values.reconciled) throw new Error("Choose a matched, unreconciled transaction to undo.");
-        const targetKey = String(transaction.values.matchedCollection) as DataKey; const target = findEntity(workspace, targetKey, String(transaction.values.targetRecord));
-        target.paidAmount = Math.max(0, round((target.paidAmount ?? 0) - Number(transaction.values.matchedAmount || 0))); target.status = outstanding(target) === 0 ? "Paid" : target.paidAmount ? "Partially Paid" : "Open"; attachHistory(target, at, "Bank match reversed"); entityLink(targetKey, target);
+        const targetKey = String(transaction.values.matchedCollection) as DataKey;
+        const matchedRows = rowValues(transaction.values.matchedAllocations);
+        for (const row of matchedRows) { const target = findEntity(workspace, targetKey, String(row.recordId)); target.paidAmount = Math.max(0, round((target.paidAmount ?? (target.status === "Paid" ? target.amount : 0)) - Number(row.amount))); target.status = outstanding(target) === 0 ? (target.paidAmount ? "Paid" : "Open") : "Partially Paid"; attachHistory(target, at, "Bank match reversed"); entityLink(targetKey, target); }
         const paymentKey = targetKey === "invoices" ? "paymentsReceived" : "paymentsMade"; const payment = workspace[paymentKey].find((item) => item.id === transaction.values.paymentId); if (payment) { payment.status = "Void"; attachHistory(payment, at, "Bank match reversed"); }
         transaction.status = "Uncategorized"; delete transaction.values.targetRecord; transaction.history.push({ at, action: "Match undone" }); resourceLink(transaction); break;
       }
-      const transaction = findArtifact(store, selectedId); const key = effect.entity ?? "invoices"; const target = findEntity(workspace, key, text(values, "targetRecord", "invoice", "bill"));
+      const transaction = findArtifact(store, selectedId); const key = effect.entity ?? "invoices";
       if (transaction.status === "Matched") throw new Error("This bank transaction is already matched.");
       const amount = Math.abs(Number(transaction.values.amount) || 0);
-      if (Math.abs(amount - outstanding(target)) > 0.005) throw new Error("Match an amount equal to the document’s outstanding balance; use categorization for other cases.");
-      applyPayment(key, target, amount); transaction.status = "Matched"; transaction.values.targetRecord = target.id; transaction.values.matchedCollection = key; transaction.values.matchedAmount = amount; transaction.history.push({ at, action: `Matched to ${target.code}` }); const payment = create(key === "invoices" ? "paymentsReceived" : "paymentsMade", { name: `Bank match · ${target.code}`, party: target.party, amount, date: String(transaction.values.date || at.slice(0, 10)) }, "Paid", target.id); transaction.values.paymentId = payment.id; resourceLink(transaction); break;
+      const direction = text(transaction.values as FlowValues, "direction").toLowerCase();
+      const deposit = Number(transaction.values.amount) > 0 || /deposit|credit|inflow/i.test(direction);
+      if ((key === "invoices") !== deposit) throw new Error(`Use ${deposit ? "Match deposit to invoice" : "Match withdrawal to bill"} for this bank transaction.`);
+      const rows = allocationRows(values); const targetId = text(values, "targetRecord", "invoice", "bill");
+      if (!rows.length || !rows.some((row) => String(row.recordId) === targetId)) throw new Error("Add the selected document to the allocation table and enter its allocation amount.");
+      if (Math.abs(round(rows.reduce((sum, row) => sum + Number(row.amount), 0)) - amount) > 0.005) throw new Error("The document allocations must equal the bank transaction amount.");
+      const targets = rows.map((row) => findEntity(workspace, key, String(row.recordId))); const parties = new Set(targets.map((item) => item.party));
+      if (parties.size > 1) throw new Error("One bank transaction may only match documents for one customer or vendor.");
+      for (let index = 0; index < rows.length; index++) applyPayment(key, targets[index], Number(rows[index].amount));
+      transaction.status = "Matched"; transaction.values.targetRecord = targetId; transaction.values.matchedCollection = key; transaction.values.matchedAmount = amount; transaction.values.matchedAllocations = rows; transaction.history.push({ at, action: `Matched ${rows.length} document${rows.length === 1 ? "" : "s"}` }); const payment = create(key === "invoices" ? "paymentsReceived" : "paymentsMade", { name: `Bank match · ${targets[0].party}`, party: targets[0].party, amount, date: String(transaction.values.date || at.slice(0, 10)), allocations: rows }, "Paid", targetId); transaction.values.paymentId = payment.id; resourceLink(transaction); break;
     }
     case "bank-categorize": {
       const transaction = findArtifact(store, selectedId); if (transaction.status === "Matched") throw new Error("A matched transaction cannot be categorized again.");
@@ -264,7 +301,12 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
     }
     case "document-process": {
       const document = findArtifact(store, selectedId); if (document.status === "Processed") throw new Error("This document was already processed.");
-      const created = create(effect.target ?? "expenses", { ...document.values, ...values, name: text(values, "name") || document.name }, "Recorded", document.id); document.status = "Processed"; document.values.linkedRecord = created.id; document.history.push({ at, action: `Processed as ${created.code}` }); resourceLink(document); break;
+      const target: DataKey = /bill/i.test(text(values, "destination")) ? "bills" : effect.target ?? "expenses";
+      const merchant = text(values, "merchant", "party", "vendor");
+      const matchedVendor = workspace.vendors.find((vendor) => vendor.id === merchant || vendor.name.toLowerCase() === merchant.toLowerCase());
+      if (target === "bills" && !matchedVendor) throw new Error("Choose a vendor already in the local workspace before creating a bill.");
+      const created = create(target, { ...document.values, ...values, name: text(values, "name") || document.name, party: target === "bills" ? matchedVendor!.id : merchant || text(values, "category") }, target === "bills" ? "Open" : "Recorded", document.id);
+      document.status = "Processed"; document.values.linkedRecord = created.id; document.history.push({ at, action: `Processed as ${created.code}` }); resourceLink(document); break;
     }
     case "automation-test": {
       const rule = findArtifact(store, selectedId);
@@ -278,7 +320,8 @@ export function executeWorkflow(flow: FlowDefinition, values: FlowValues, curren
       const csv = text(values, csvField?.id ?? "csv", "csv", "csvText", "statement", "statementCsv", "file"); const parsed = parseCsv(csv); if (parsed.length < 2) throw new Error("Provide a header and at least one CSV data row."); if (parsed.length > 501) throw new Error("Import up to 500 fictional rows per batch.");
       let mapping: Record<string, string> = {}; try { mapping = JSON.parse(text(values, `${csvField?.id ?? "csv"}Mapping`) || "{}"); } catch { throw new Error("Invalid CSV mapping."); }
       const headers = parsed[0].map((header) => mapping[header] === "__skip__" ? "" : mapping[header] || header.toLowerCase().replace(/[^a-z]/g, ""));
-      for (const row of parsed.slice(1)) { const input: FlowValues = {}; for (let i = 0; i < headers.length; i++) input[headers[i]] = row[i] || ""; input.name = text(input, "name", "description", "title") || "Imported record"; input.party = text(input, "party", "customer", "vendor"); input.date = text(input, "date") || at.slice(0, 10); const amount = Number(input.amount || input.rate || 0); if (!Number.isFinite(amount)) throw new Error("CSV amounts must be valid numbers."); input.amount = amount;
+      for (const row of parsed.slice(1)) { const input: FlowValues = {}; for (let i = 0; i < headers.length; i++) if (headers[i]) input[headers[i]] = row[i] || ""; input.name = text(input, "name", "description", "title") || "Imported record"; input.party = text(input, "party", "customer", "vendor"); input.date = text(input, "date") || at.slice(0, 10); const amount = Number(input.amount || input.rate || values.amount || values.rate || 0); if (!Number.isFinite(amount)) throw new Error("CSV amounts must be valid numbers."); input.amount = amount;
+        if (effect.entity === "items") { input.category = text(input, "category") || text(values, "category") || "Uncategorized"; input.description = text(input, "description") || text(values, "description"); input.quantity = Number(input.quantity ?? input.openingStock ?? values.quantity ?? values.openingStock ?? 0); if (!Number.isFinite(Number(input.quantity)) || Number(input.quantity) < 0) throw new Error("Imported inventory quantity must be zero or greater."); input.rate = Number(input.rate ?? values.rate ?? input.amount); }
         if (effect.entity) create(effect.entity, input); else { if (/withdraw|debit/i.test(text(input, "direction"))) input.amount = -Math.abs(amount); const account = text(values, "account", "bankAccount"); const duplicate = store.artifacts.some((item) => item.collection === "bankTransactions" && item.values.account === account && item.values.date === input.date && item.values.amount === input.amount && item.values.description === input.description); if (!duplicate || text(values, "duplicateHandling") !== "Skip exact duplicates") artifact(effect.collection ?? "bankTransactions", { ...input, account }, "Uncategorized"); } }
       break;
     }

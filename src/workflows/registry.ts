@@ -24,6 +24,8 @@ const lifecycle: FlowDefinition[] = [
 ];
 function normalizeFlow(input: FlowDefinition): FlowDefinition {
   const flow = structuredClone(input);
+  const linkAliases: Record<string, string> = { "invite-customer-portal": "manage-customer-portal-message", "create-report-schedule": "schedule-report" };
+  flow.nextFlowIds = flow.nextFlowIds?.map((id) => linkAliases[id] || id);
   const entityStatuses: Record<string, { entity: DataKey; status: "Declined" | "Void" | "Paused" | "Completed" | "Accepted" | "Published" }> = {
     "decline-quote": { entity: "quotes", status: "Declined" }, "void-invoice": { entity: "invoices", status: "Void" },
     "pause-recurring-invoice": { entity: "recurringInvoices", status: "Paused" }, "pause-recurring-bill": { entity: "recurringBills", status: "Paused" },
@@ -41,13 +43,21 @@ function normalizeFlow(input: FlowDefinition): FlowDefinition {
     if (field.id === "module" && ["lock-transactions", "unlock-transactions"].includes(flow.id)) field.options = ["Sales", "Purchases", "Banking", "Accountant"];
     if (field.id === "criteria") field.help = "Use status=Overdue, amount>=500, or name contains workshop. Combine clauses with AND; the local test evaluates only these conditions.";
   }
-  if (["create-invoice", "create-quote", "create-bill"].includes(flow.id)) flow.steps[flow.steps.length - 1].fields.push(
-    { id: "discount", label: "Discount amount", type: "number", min: 0, defaultValue: 0 },
-    { id: "taxRate", label: "Tax rate (%)", type: "number", min: 0, defaultValue: 0 },
-    { id: "shipping", label: "Shipping / additional charge", type: "number", min: 0, defaultValue: 0 },
-  );
+  if (flow.steps.some((step) => step.fields.some((field) => field.type === "lines"))) {
+    for (const amount of flow.steps.flatMap((step) => step.fields).filter((field) => field.id === "amount" && field.required)) amount.required = false;
+    if (flow.effect.kind === "create") {
+      const last = flow.steps[flow.steps.length - 1];
+      for (const field of [{ id: "discount", label: "Discount amount", type: "number" as const, min: 0, defaultValue: 0 }, { id: "taxRate", label: "Tax rate (%)", type: "number" as const, min: 0, defaultValue: 0 }, { id: "shipping", label: "Shipping / additional charge", type: "number" as const, min: 0, defaultValue: 0 }]) if (!last.fields.some((old) => old.id === field.id)) last.fields.push(field);
+    }
+  }
   return flow;
 }
 export const allFlows: FlowDefinition[] = [...domainFlows, ...lifecycle, ...imports.filter((flow) => !domainFlows.some((existing) => existing.id === flow.id))].map(normalizeFlow);
-export function createFlowFor(key: DataKey) { return allFlows.find((flow) => flow.effect.entity === key && ["create", "journal"].includes(flow.effect.kind)); }
+const preferredCreationFlow: Partial<Record<DataKey, string>> = { journals: "create-journal" };
+export function createFlowFor(key: DataKey) {
+  const preferred = preferredCreationFlow[key];
+  return (preferred ? allFlows.find((flow) => flow.id === preferred) : undefined)
+    ?? allFlows.find((flow) => flow.effect.entity === key && flow.id.startsWith("create-") && ["create", "journal", "recurring"].includes(flow.effect.kind))
+    ?? allFlows.find((flow) => flow.effect.target === key && ["payment", "recurring", "time-invoice"].includes(flow.effect.kind));
+}
 export function recordFlowsFor(key: DataKey) { return allFlows.filter((flow) => flow.effect.entity === key && !["create", "import"].includes(flow.effect.kind) && !(flow.effect.kind === "journal" && !flow.effect.action?.includes("reverse"))); }
